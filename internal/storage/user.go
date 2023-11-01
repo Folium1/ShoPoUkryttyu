@@ -17,7 +17,7 @@ func (db DB) CreateUser(user models.User) (primitive.ObjectID, error) {
 
 	user.ID = primitive.NewObjectID()
 
-	res, err := db.client.Database(db.db).Collection(db.usersCollection).InsertOne(ctx, user)
+	res, err := db.client.Database(db.dbName).Collection(db.usersCollection).InsertOne(ctx, user)
 	if err != nil {
 		return primitive.NilObjectID, fmt.Errorf("%s: %w", op, err)
 	}
@@ -32,7 +32,7 @@ func (db DB) UserByID(id primitive.ObjectID) (models.User, error) {
 	filter := bson.D{{Key: "_id", Value: id}}
 	var user models.User
 
-	err := db.client.Database(db.db).Collection(db.usersCollection).FindOne(ctx, filter).Decode(&user)
+	err := db.client.Database(db.dbName).Collection(db.usersCollection).FindOne(ctx, filter).Decode(&user)
 	if err != nil {
 		return models.User{}, fmt.Errorf("mongo.GetUser: %w", err)
 	}
@@ -47,7 +47,7 @@ func (db DB) GetAllUsers() ([]models.User, error) {
 	defer cancel()
 
 	filter := bson.D{{}}
-	cursor, err := db.client.Database(db.db).Collection(db.usersCollection).Find(ctx, filter)
+	cursor, err := db.client.Database(db.dbName).Collection(db.usersCollection).Find(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -70,7 +70,7 @@ func (db DB) UserByMail(mail string) (models.User, error) {
 	filter := bson.D{{Key: "email", Value: mail}}
 
 	var userDB models.User
-	err := db.client.Database(db.db).Collection(db.usersCollection).FindOne(ctx, filter).Decode(&userDB)
+	err := db.client.Database(db.dbName).Collection(db.usersCollection).FindOne(ctx, filter).Decode(&userDB)
 	if err != nil {
 		return models.User{}, fmt.Errorf("%s: %w", op, err)
 	}

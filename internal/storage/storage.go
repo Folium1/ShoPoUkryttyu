@@ -18,7 +18,7 @@ const (
 
 type DB struct {
 	path               string
-	db                 string
+	dbName             string
 	usersCollection    string
 	sheltersCollection string
 	client             *mongo.Client
@@ -31,7 +31,7 @@ func NewStorage(cfg config.MongoDBConfig) (*DB, error) {
 	defer cancel()
 	mon := &DB{
 		path:               cfg.MongoPath,
-		db:                 cfg.DB,
+		dbName:             cfg.DB,
 		usersCollection:    cfg.UsersCollection,
 		sheltersCollection: cfg.SheltersCollection,
 	}
@@ -46,9 +46,8 @@ func NewStorage(cfg config.MongoDBConfig) (*DB, error) {
 
 // SetupMongo creates unique indexes on the "email" and "address" fields
 func (db DB) SetupMongo() {
-
 	// Get the database and collection objects
-	database := db.client.Database(db.db)
+	database := db.client.Database(db.dbName)
 	collection := database.Collection(db.usersCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -61,24 +60,6 @@ func (db DB) SetupMongo() {
 		Options: options.Index().SetUnique(true),
 	}
 	_, err := collection.Indexes().CreateOne(ctx, indexModel)
-	if err != nil {
-		log.Fatalf("Failed to create index: %v", err)
-	}
-
-	// Get the database and collection objects
-	database = db.client.Database(db.db)
-	collection = database.Collection(db.sheltersCollection)
-	ctx, cancel = context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	// Create a unique index on the "email" field
-	indexModel = mongo.IndexModel{
-		Keys: bson.M{
-			"address": 1,
-		},
-		Options: options.Index().SetUnique(true),
-	}
-	_, err = collection.Indexes().CreateOne(ctx, indexModel)
 	if err != nil {
 		log.Fatalf("Failed to create index: %v", err)
 	}
