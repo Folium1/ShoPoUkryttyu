@@ -53,7 +53,7 @@ func (s UserService) UserByID(id primitive.ObjectID) (models.User, error) {
 }
 
 func (s UserService) GetAllUsers() ([]models.User, error) {
-	users, err := s.storage.GetAllUsers()
+	users, err := s.storage.AllUsers()
 	if err != nil {
 		return nil, err
 	}
