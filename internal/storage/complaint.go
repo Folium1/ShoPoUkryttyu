@@ -13,7 +13,7 @@ import (
 func (db DB) AddComplaint(complaint models.Complaint) (primitive.ObjectID, error) {
 	const op = "mongo.AddComplaint"
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), db.timeout)
 	defer cancel()
 
 	complaint.ID = primitive.NewObjectID()
@@ -27,10 +27,29 @@ func (db DB) AddComplaint(complaint models.Complaint) (primitive.ObjectID, error
 	return res.InsertedID.(primitive.ObjectID), nil
 }
 
+func (db DB) ComplaintIsResolved(complaintID primitive.ObjectID) error {
+	const op = "mongo.UpdateComplaint"
+
+	ctx, cancel := context.WithTimeout(context.Background(), db.timeout)
+	defer cancel()
+
+	filter := bson.D{{Key: "_id", Value: complaintID}}
+	res, err := db.client.Database(db.dbName).Collection(db.sheltersCollection).UpdateOne(ctx, filter, bson.D{{Key: "$set", Value: bson.D{{Key: "is_resolved", Value: true}}}})
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if res.MatchedCount == 0 {
+		return fmt.Errorf("%s: %w", op, models.ErrComplaintNotFound)
+	}
+
+	return nil
+}
+
 func (db DB) GetComplaintByID(ID primitive.ObjectID) (models.Complaint, error) {
 	const op = "mongo.GetComplaint"
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), db.timeout)
 	defer cancel()
 
 	filter := bson.D{{Key: "_id", Value: ID}}
@@ -53,7 +72,7 @@ func (db DB) GetComplaintByID(ID primitive.ObjectID) (models.Complaint, error) {
 func (db DB) GetComplaintByAddress(shelter models.Shelter) ([]models.Complaint, error) {
 	op := "mongo.GetComplaint"
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), db.timeout)
 	defer cancel()
 
 	filter := bson.D{{Key: "city", Value: shelter.City}, {Key: "address", Value: shelter.Address}}
@@ -74,7 +93,7 @@ func (db DB) GetComplaintByAddress(shelter models.Shelter) ([]models.Complaint, 
 func (db DB) GetComplaintByUserID(ID primitive.ObjectID) ([]models.Complaint, error) {
 	op := "mongo.GetComplaintByUserID"
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), db.timeout)
 	defer cancel()
 
 	filter := bson.D{{Key: "userID", Value: ID}}
@@ -95,7 +114,7 @@ func (db DB) GetComplaintByUserID(ID primitive.ObjectID) ([]models.Complaint, er
 func (db DB) GetAllComplaints() ([]models.Complaint, error) {
 	const op = "mongo.GetAllComplaints"
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), db.timeout)
 	defer cancel()
 
 	filter := bson.D{{}}

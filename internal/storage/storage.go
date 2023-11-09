@@ -12,11 +12,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const (
-	timeout = 10 * time.Second
-)
-
 type DB struct {
+	timeout            time.Duration
 	path               string
 	dbName             string
 	usersCollection    string
@@ -27,9 +24,12 @@ type DB struct {
 func NewStorage(cfg config.MongoDBConfig) (*DB, error) {
 	const op = "mongo.NewMongoDB"
 
+	timeout := time.Duration(cfg.Timeout) * time.Second
+
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	mon := &DB{
+		timeout:            timeout,
 		path:               cfg.MongoPath,
 		dbName:             cfg.DB,
 		usersCollection:    cfg.UsersCollection,
@@ -44,15 +44,12 @@ func NewStorage(cfg config.MongoDBConfig) (*DB, error) {
 	return mon, nil
 }
 
-// SetupMongo creates unique indexes on the "email" and "address" fields
 func (db DB) SetupMongo() {
-	// Get the database and collection objects
 	database := db.client.Database(db.dbName)
 	collection := database.Collection(db.usersCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), db.timeout)
 	defer cancel()
 
-	// Create a unique index on the "email" field
 	indexModel := mongo.IndexModel{
 		Keys: bson.M{
 			"email": 1,

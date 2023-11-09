@@ -12,9 +12,8 @@ import (
 func (db DB) CreateUser(user models.User) (primitive.ObjectID, error) {
 	const op = "mongo.CreateUser"
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), db.timeout)
 	defer cancel()
-
 	user.ID = primitive.NewObjectID()
 
 	res, err := db.client.Database(db.dbName).Collection(db.usersCollection).InsertOne(ctx, user)
@@ -26,7 +25,7 @@ func (db DB) CreateUser(user models.User) (primitive.ObjectID, error) {
 }
 
 func (db DB) UserByID(id primitive.ObjectID) (models.User, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), db.timeout)
 	defer cancel()
 
 	filter := bson.D{{Key: "_id", Value: id}}
@@ -40,10 +39,10 @@ func (db DB) UserByID(id primitive.ObjectID) (models.User, error) {
 	return user, nil
 }
 
-func (db DB) GetAllUsers() ([]models.User, error) {
+func (db DB) AllUsers() ([]models.User, error) {
 	const op = "mongo.GetAllUsers"
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), db.timeout)
 	defer cancel()
 
 	filter := bson.D{{}}
@@ -64,7 +63,7 @@ func (db DB) GetAllUsers() ([]models.User, error) {
 func (db DB) UserByMail(mail string) (models.User, error) {
 	const op = "mongo.LoginUser"
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), db.timeout)
 	defer cancel()
 
 	filter := bson.D{{Key: "email", Value: mail}}
